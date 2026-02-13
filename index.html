@@ -639,7 +639,7 @@ if (!localStorage.getItem('sowl_voice_config')) {
             <div class="setup-field">
                 <label class="setup-label">Agent ID</label>
                 <input class="setup-input" id="agentIdInput" type="text"
-                       placeholder="e.g. abc123def456..."
+                       placeholder="e.g. abc123def456..." value="agent_2801khas9e55e8187e1d4ysmekws"
                        autocomplete="off" autocorrect="off" spellcheck="false">
             </div>
             <div class="setup-field">
@@ -1094,5 +1094,18 @@ if (!localStorage.getItem('sowl_voice_config')) {
     }, { once: true });
 
     </script>
-</body>
+<script>
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const saved = localStorage.getItem('sowl_voice_config');
+        if (!saved) {
+            localStorage.setItem('sowl_voice_config', JSON.stringify({
+                agentId: 'agent_2801khas9e55e8187e1d4ysmekws'
+            }));
+            // Reload to pick up the saved config and auto-connect
+            window.location.reload();
+        }
+    }, 500);
+});
+</script></body>
 </html>
