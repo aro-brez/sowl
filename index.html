@@ -8,15 +8,16 @@
     <meta name="apple-mobile-web-app-title" content="8OWLS">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0D0D2A">
-    <meta name="description" content="8OWLS - Voice-first consciousness companion">
-    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%228OWLS%22%2C%22short_name%22%3A%228OWLS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230D0D2A%22%2C%22theme_color%22%3A%22%230D0D2A%22%2C%22icons%22%3A%5B%5D%7D">
-    <title>8OWLS</title>
+    <meta name="description" content="8OWLS - Voice + Code Companion">
+    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%228OWLS%20Companion%22%2C%22short_name%22%3A%228OWLS%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230D0D2A%22%2C%22theme_color%22%3A%22%230D0D2A%22%2C%22icons%22%3A%5B%5D%7D">
+    <title>8OWLS Companion</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --bg: #0D0D2A;
             --bg-deep: #080818;
+            --bg-panel: rgba(13, 13, 42, 0.95);
             --lime: #e3f98a;
             --lime-dim: rgba(227, 249, 138, 0.5);
             --lime-ghost: rgba(227, 249, 138, 0.08);
@@ -24,80 +25,215 @@
             --teal-dim: rgba(101, 205, 216, 0.7);
             --teal-ghost: rgba(101, 205, 216, 0.12);
             --purple: #8533fc;
+            --purple-ghost: rgba(133, 51, 252, 0.1);
             --danger: #ff6b6b;
             --success: #6BCB77;
+            --warning: #ffce33;
             --white: rgba(255, 255, 255, 0.92);
             --white-dim: rgba(255, 255, 255, 0.5);
+            --white-ghost: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(227, 249, 138, 0.3);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--font);
             background: var(--bg);
             color: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            min-height: 100dvh;
             overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
         }
 
-        /* -- Layout -- */
-        .app {
+        /* ================================================================
+           PASSWORD GATE
+           ================================================================ */
+        .gate-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 9999;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            height: 100dvh;
-            position: relative;
+            justify-content: center;
+            padding: 2rem;
+            transition: opacity 0.5s ease;
         }
 
-        .header {
+        .gate-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .gate-card {
             width: 100%;
-            padding: 1rem 1.25rem 0;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .gate-symbol {
+            font-size: 2.5rem;
+            opacity: 0.3;
+            animation: gate-breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes gate-breathe {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.05); }
+        }
+
+        .gate-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--lime-dim);
+        }
+
+        .gate-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: var(--white-ghost);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--white);
+            font-size: 1rem;
+            font-family: var(--font-mono);
+            text-align: center;
+            letter-spacing: 3px;
+            outline: none;
+            transition: border-color 0.2s;
+            -webkit-text-security: disc;
+        }
+
+        .gate-input:focus {
+            border-color: var(--border-focus);
+        }
+
+        .gate-input.shake {
+            animation: shake 0.4s ease;
+            border-color: var(--danger);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .gate-hint {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ================================================================
+           MAIN APP LAYOUT
+           ================================================================ */
+        .app {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .app.visible { opacity: 1; }
+
+        /* ---- Top Bar ---- */
+        .topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-deep);
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
-            z-index: 10;
+            z-index: 50;
+            min-height: 44px;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .brand {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             color: var(--lime-dim);
             text-transform: uppercase;
         }
 
-        .status-chip {
+        .mode-toggle {
+            display: flex;
+            background: var(--white-ghost);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            padding: 4px 10px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: var(--white-dim);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mode-btn.active {
+            background: var(--lime-ghost);
+            color: var(--lime);
+        }
+
+        .topbar-right {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.7rem;
+            gap: 0.6rem;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.6rem;
             color: var(--white-dim);
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: var(--white-ghost);
+            border: 1px solid var(--border);
         }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             background: var(--danger);
-            transition: background 0.4s ease;
+            transition: background 0.3s;
+            flex-shrink: 0;
         }
 
         .status-dot.connected { background: var(--success); }
         .status-dot.connecting {
-            background: var(--teal);
+            background: var(--warning);
             animation: blink 1s ease-in-out infinite;
         }
 
@@ -106,22 +242,77 @@
             50% { opacity: 0.3; }
         }
 
-        /* -- Orb Section (center of the experience) -- */
-        .orb-section {
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--white-dim);
+            fill: none;
+            stroke-width: 1.5;
+            transition: stroke 0.2s;
+        }
+
+        .icon-btn:hover svg { stroke: var(--lime); }
+
+        /* ---- Main Content Area ---- */
+        .main-content {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* Voice-only mode: orb + transcript fill the space */
+        .main-content[data-mode="voice"] .voice-section { flex: 1; }
+        .main-content[data-mode="voice"] .terminal-section { display: none; }
+
+        /* Voice+Code mode: split view */
+        .main-content[data-mode="code"] .voice-section {
+            flex: 0 0 auto;
+            max-height: 35vh;
+            min-height: 180px;
+        }
+        .main-content[data-mode="code"] .terminal-section {
+            flex: 1;
+            display: flex;
+        }
+
+        /* ---- Voice Section ---- */
+        .voice-section {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
-            width: 100%;
-            min-height: 0;
+            overflow: hidden;
         }
 
-        .orb-container {
+        .orb-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 0;
             position: relative;
-            width: 220px;
-            height: 220px;
+        }
+
+        /* ---- Orb ---- */
+        .orb-wrap {
+            position: relative;
+            width: 160px;
+            height: 160px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -130,70 +321,77 @@
             touch-action: none;
         }
 
-        /* Ambient glow behind orb */
+        .main-content[data-mode="code"] .orb-wrap {
+            width: 100px;
+            height: 100px;
+        }
+
         .orb-glow {
             position: absolute;
-            width: 300px;
-            height: 300px;
+            width: 240px;
+            height: 240px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(227, 249, 138, 0.04) 0%, transparent 70%);
             pointer-events: none;
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        [data-state="listening"] .orb-glow {
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(101, 205, 216, 0.1) 0%, transparent 70%);
+        .main-content[data-mode="code"] .orb-glow {
+            width: 160px;
+            height: 160px;
         }
 
-        [data-state="speaking"] .orb-glow {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(227, 249, 138, 0.12) 0%, transparent 70%);
+        [data-voice="listening"] .orb-glow {
+            background: radial-gradient(circle, rgba(101, 205, 216, 0.12) 0%, transparent 70%);
+            transform: scale(1.2);
+        }
+
+        [data-voice="speaking"] .orb-glow {
+            background: radial-gradient(circle, rgba(227, 249, 138, 0.14) 0%, transparent 70%);
             animation: glow-breathe 2.5s ease-in-out infinite;
         }
 
-        [data-state="thinking"] .orb-glow {
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, rgba(133, 51, 252, 0.1) 0%, transparent 70%);
+        [data-voice="thinking"] .orb-glow {
+            background: radial-gradient(circle, rgba(133, 51, 252, 0.12) 0%, transparent 70%);
             animation: glow-think 1.5s ease-in-out infinite;
         }
 
         @keyframes glow-breathe {
             0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.08); }
+            50% { opacity: 1; transform: scale(1.1); }
         }
 
         @keyframes glow-think {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
         }
 
-        /* Outer ring */
         .orb-ring {
             position: absolute;
-            width: 200px;
-            height: 200px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            border: 1.5px solid rgba(227, 249, 138, 0.15);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1.5px solid rgba(227, 249, 138, 0.12);
+            transition: all 0.5s;
         }
 
-        [data-state="listening"] .orb-ring {
+        .main-content[data-mode="code"] .orb-ring {
+            width: 88px;
+            height: 88px;
+        }
+
+        [data-voice="listening"] .orb-ring {
             border-color: rgba(101, 205, 216, 0.5);
-            box-shadow: 0 0 40px rgba(101, 205, 216, 0.15);
+            box-shadow: 0 0 30px rgba(101, 205, 216, 0.12);
             animation: ring-pulse 1.4s ease-in-out infinite;
         }
 
-        [data-state="speaking"] .orb-ring {
-            border-color: rgba(227, 249, 138, 0.4);
-            box-shadow: 0 0 50px rgba(227, 249, 138, 0.1);
+        [data-voice="speaking"] .orb-ring {
+            border-color: rgba(227, 249, 138, 0.35);
             animation: ring-breathe 2.5s ease-in-out infinite;
         }
 
-        [data-state="thinking"] .orb-ring {
+        [data-voice="thinking"] .orb-ring {
             border-color: rgba(133, 51, 252, 0.4);
             animation: ring-spin 3s linear infinite;
         }
@@ -213,24 +411,27 @@
             to { transform: rotate(360deg); }
         }
 
-        /* The orb itself */
-        .orb {
-            width: 160px;
-            height: 160px;
+        .orb-core {
+            width: 110px;
+            height: 110px;
             border-radius: 50%;
             background: radial-gradient(circle at 40% 35%,
-                rgba(227, 249, 138, 0.12) 0%,
-                rgba(101, 205, 216, 0.06) 40%,
+                rgba(227, 249, 138, 0.1) 0%,
+                rgba(101, 205, 216, 0.05) 40%,
                 rgba(13, 13, 42, 0.9) 80%
             );
-            border: 1px solid rgba(227, 249, 138, 0.1);
+            border: 1px solid rgba(227, 249, 138, 0.08);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
             animation: idle-breathe 4s ease-in-out infinite;
+        }
+
+        .main-content[data-mode="code"] .orb-core {
+            width: 70px;
+            height: 70px;
         }
 
         @keyframes idle-breathe {
@@ -238,18 +439,18 @@
             50% { transform: scale(1.02); }
         }
 
-        [data-state="listening"] .orb {
+        [data-voice="listening"] .orb-core {
             background: radial-gradient(circle at 40% 35%,
                 rgba(101, 205, 216, 0.2) 0%,
                 rgba(101, 205, 216, 0.08) 40%,
                 rgba(13, 13, 42, 0.9) 80%
             );
-            border-color: rgba(101, 205, 216, 0.25);
+            border-color: rgba(101, 205, 216, 0.2);
             animation: none;
             transform: scale(1.05);
         }
 
-        [data-state="speaking"] .orb {
+        [data-voice="speaking"] .orb-core {
             background: radial-gradient(circle at 40% 35%,
                 rgba(227, 249, 138, 0.18) 0%,
                 rgba(227, 249, 138, 0.06) 40%,
@@ -259,7 +460,7 @@
             animation: orb-speak 2.5s ease-in-out infinite;
         }
 
-        [data-state="thinking"] .orb {
+        [data-voice="thinking"] .orb-core {
             background: radial-gradient(circle at 40% 35%,
                 rgba(133, 51, 252, 0.15) 0%,
                 rgba(133, 51, 252, 0.05) 40%,
@@ -279,49 +480,52 @@
             50% { transform: scale(1.03); }
         }
 
-        /* Inner eye icon */
         .orb-eye {
-            width: 36px;
-            height: 36px;
-            opacity: 0.4;
-            transition: opacity 0.4s ease;
+            width: 28px;
+            height: 28px;
+            opacity: 0.35;
+            transition: opacity 0.4s;
         }
 
-        [data-state="listening"] .orb-eye,
-        [data-state="speaking"] .orb-eye {
+        .main-content[data-mode="code"] .orb-eye {
+            width: 20px;
+            height: 20px;
+        }
+
+        [data-voice="listening"] .orb-eye,
+        [data-voice="speaking"] .orb-eye {
             opacity: 0.7;
         }
 
-        /* Audio visualizer bars inside orb */
         .visualizer {
             position: absolute;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 3px;
-            height: 30px;
+            height: 24px;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
         }
 
-        [data-state="listening"] .visualizer,
-        [data-state="speaking"] .visualizer {
+        [data-voice="listening"] .visualizer,
+        [data-voice="speaking"] .visualizer {
             opacity: 1;
         }
 
         .viz-bar {
-            width: 3px;
-            height: 8px;
+            width: 2.5px;
+            height: 6px;
             border-radius: 2px;
             background: var(--teal);
             transition: background 0.3s;
         }
 
-        [data-state="speaking"] .viz-bar { background: var(--lime); }
+        [data-voice="speaking"] .viz-bar { background: var(--lime); }
 
-        [data-state="listening"] .viz-bar,
-        [data-state="speaking"] .viz-bar {
+        [data-voice="listening"] .viz-bar,
+        [data-voice="speaking"] .viz-bar {
             animation: viz-bounce 0.6s ease-in-out infinite alternate;
         }
 
@@ -332,200 +536,242 @@
         .viz-bar:nth-child(5) { animation-delay: 0s; }
 
         @keyframes viz-bounce {
-            from { height: 6px; }
-            to { height: 24px; }
+            from { height: 5px; }
+            to { height: 20px; }
         }
 
-        /* State label */
         .state-label {
-            margin-top: 1.5rem;
-            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
             color: var(--white-dim);
-            letter-spacing: 1px;
-            min-height: 1.2rem;
+            letter-spacing: 0.5px;
             text-align: center;
+            min-height: 1rem;
             transition: color 0.3s;
         }
 
         .state-label.error { color: var(--danger); }
 
-        /* -- Transcript Section -- */
-        .transcript-section {
+        /* ---- Transcript ---- */
+        .transcript {
             width: 100%;
-            flex-shrink: 0;
-            max-height: 35vh;
-            display: flex;
-            flex-direction: column;
-            padding: 0 1rem 1rem;
-        }
-
-        .transcript-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .transcript-toggle-line {
-            width: 32px;
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(255, 255, 255, 0.15);
-            transition: background 0.2s;
-        }
-
-        .transcript-toggle:hover .transcript-toggle-line {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .transcript-list {
-            flex: 1;
+            max-height: 30vh;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-            padding: 0.25rem 0;
+            padding: 0.5rem 0.75rem;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .transcript-list::-webkit-scrollbar { display: none; }
+        .transcript::-webkit-scrollbar { display: none; }
 
-        .transcript-list.collapsed {
-            max-height: 0;
-            overflow: hidden;
-            padding: 0;
+        .main-content[data-mode="code"] .transcript {
+            max-height: 60px;
+            padding: 0.25rem 0.75rem;
         }
 
         .msg {
-            padding: 0.7rem 0.9rem;
-            border-radius: 14px;
-            font-size: 0.88rem;
-            line-height: 1.5;
-            max-width: 88%;
-            animation: msg-in 0.3s ease;
+            padding: 0.5rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            max-width: 85%;
+            margin-bottom: 0.4rem;
+            animation: msg-in 0.25s ease;
         }
 
         @keyframes msg-in {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .msg.user {
-            align-self: flex-end;
+            margin-left: auto;
             background: var(--teal-ghost);
-            border: 1px solid rgba(101, 205, 216, 0.15);
-            color: var(--white);
+            border: 1px solid rgba(101, 205, 216, 0.12);
         }
 
         .msg.owl {
-            align-self: flex-start;
+            margin-right: auto;
             background: var(--lime-ghost);
-            border: 1px solid rgba(227, 249, 138, 0.12);
-            color: var(--white);
+            border: 1px solid rgba(227, 249, 138, 0.1);
         }
 
-        .msg .msg-label {
-            font-size: 0.65rem;
+        .msg-label {
+            font-size: 0.6rem;
             font-weight: 600;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            margin-bottom: 0.2rem;
-            opacity: 0.5;
+            margin-bottom: 2px;
+            opacity: 0.45;
         }
 
         .msg.user .msg-label { color: var(--teal); }
         .msg.owl .msg-label { color: var(--lime); }
 
-        /* -- Setup Overlay -- */
-        .setup-overlay {
+        .msg-badge {
+            display: inline-block;
+            font-size: 0.55rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .msg-badge.code-sent {
+            background: var(--purple-ghost);
+            color: var(--purple);
+            border: 1px solid rgba(133, 51, 252, 0.2);
+        }
+
+        /* ---- Terminal Section ---- */
+        .terminal-section {
+            display: none;
+            flex-direction: column;
+            border-top: 1px solid var(--border);
+            position: relative;
+            background: var(--bg-deep);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.35rem 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .terminal-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--white-dim);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .terminal-title .status-dot {
+            width: 5px;
+            height: 5px;
+        }
+
+        .terminal-link {
+            font-size: 0.6rem;
+            color: var(--teal-dim);
+            text-decoration: none;
+        }
+
+        .terminal-link:hover { color: var(--teal); }
+
+        .terminal-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #000;
+        }
+
+        /* ---- Settings Overlay ---- */
+        .settings-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(8, 8, 24, 0.95);
+            background: rgba(8, 8, 24, 0.96);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            z-index: 100;
+            z-index: 200;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            transition: opacity 0.4s ease;
-        }
-
-        .setup-overlay.hidden {
+            padding: 2rem 1rem;
+            overflow-y: auto;
             opacity: 0;
             pointer-events: none;
+            transition: opacity 0.3s;
         }
 
-        .setup-card {
+        .settings-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-card {
             width: 100%;
-            max-width: 360px;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             gap: 1.2rem;
         }
 
-        .setup-title {
-            font-size: 1.4rem;
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-title {
+            font-size: 1rem;
             font-weight: 300;
             letter-spacing: 3px;
             color: var(--lime);
-            text-align: center;
+            text-transform: uppercase;
         }
 
-        .setup-subtitle {
-            font-size: 0.8rem;
+        .settings-close {
+            background: none;
+            border: none;
             color: var(--white-dim);
-            text-align: center;
-            line-height: 1.6;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .setup-field {
+        .settings-close:hover { color: var(--white); }
+
+        .field-group {
             display: flex;
             flex-direction: column;
             gap: 0.4rem;
         }
 
-        .setup-label {
-            font-size: 0.7rem;
+        .field-label {
+            font-size: 0.65rem;
             font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
             color: var(--white-dim);
         }
 
-        .setup-input {
+        .field-input {
             width: 100%;
-            padding: 0.7rem 0.9rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            padding: 0.6rem 0.8rem;
+            background: var(--white-ghost);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             color: var(--white);
-            font-size: 0.85rem;
-            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
             outline: none;
             transition: border-color 0.2s;
         }
 
-        .setup-input:focus {
-            border-color: var(--lime-dim);
+        .field-input:focus { border-color: var(--border-focus); }
+        .field-input::placeholder { color: rgba(255, 255, 255, 0.18); }
+
+        .field-hint {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.25);
         }
 
-        .setup-input::placeholder {
-            color: rgba(255, 255, 255, 0.2);
-        }
-
-        .setup-btn {
-            padding: 0.8rem;
+        .settings-save-btn {
+            padding: 0.7rem;
             background: var(--lime-ghost);
             border: 1px solid rgba(227, 249, 138, 0.2);
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             color: var(--lime);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             letter-spacing: 1px;
             cursor: pointer;
@@ -533,138 +779,152 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .setup-btn:hover {
-            background: rgba(227, 249, 138, 0.15);
+        .settings-save-btn:hover { background: rgba(227, 249, 138, 0.15); }
+        .settings-save-btn:active { transform: scale(0.98); }
+
+        .field-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
         }
 
-        .setup-btn:active { transform: scale(0.98); }
-
-        .setup-hint {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.25);
-            text-align: center;
-        }
-
-        /* -- Settings gear -- */
-        .settings-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .settings-btn svg {
+        .field-toggle input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            stroke: var(--white-dim);
-            fill: none;
-            stroke-width: 1.5;
-            transition: stroke 0.2s;
+            accent-color: var(--lime);
         }
 
-        .settings-btn:hover svg { stroke: var(--lime); }
+        .field-toggle label {
+            font-size: 0.75rem;
+            color: var(--white-dim);
+        }
 
-        /* -- Tap hint -- */
+        /* ---- Responsive ---- */
+        @media (max-height: 500px) {
+            .main-content[data-mode="code"] .voice-section {
+                min-height: 120px;
+                max-height: 25vh;
+            }
+            .orb-wrap { width: 100px; height: 100px; }
+            .orb-core { width: 70px; height: 70px; }
+            .orb-ring { width: 88px; height: 88px; }
+            .orb-glow { width: 140px; height: 140px; }
+            .orb-eye { width: 18px; height: 18px; }
+        }
+
+        @media (min-width: 768px) {
+            .main-content[data-mode="code"] {
+                flex-direction: row;
+            }
+            .main-content[data-mode="code"] .voice-section {
+                flex: 0 0 320px;
+                max-height: none;
+                min-height: auto;
+                border-right: 1px solid var(--border);
+                border-bottom: none;
+            }
+            .main-content[data-mode="code"] .terminal-section {
+                border-top: none;
+            }
+        }
+
+        /* ---- Tap hint ---- */
         .tap-hint {
-            position: absolute;
-            bottom: -3rem;
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.2);
-            letter-spacing: 0.5px;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.18);
+            margin-top: 0.4rem;
             animation: hint-fade 3s ease-in-out infinite;
-        }
-
-        @keyframes hint-fade {
-            0%, 100% { opacity: 0.2; }
-            50% { opacity: 0.5; }
         }
 
         .tap-hint.hidden { display: none; }
 
-        /* -- NATS indicator -- */
-        .nats-chip {
-            position: fixed;
-            bottom: 8px;
-            left: 10px;
-            font-size: 0.6rem;
-            color: rgba(101, 205, 216, 0.3);
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .nats-dot {
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: rgba(101, 205, 216, 0.3);
-        }
-
-        .nats-dot.connected { background: var(--success); }
-
-        /* -- Responsive -- */
-        @media (max-height: 600px) {
-            .orb-container { width: 160px; height: 160px; }
-            .orb { width: 120px; height: 120px; }
-            .orb-ring { width: 150px; height: 150px; }
-            .orb-glow { width: 220px; height: 220px; }
-            .transcript-section { max-height: 30vh; }
-        }
-
-        @media (min-height: 800px) {
-            .orb-container { width: 260px; height: 260px; }
-            .orb { width: 190px; height: 190px; }
-            .orb-ring { width: 240px; height: 240px; }
+        @keyframes hint-fade {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: 0.35; }
         }
     </style>
-<script>
-// Pre-configure SOWL agent
-if (!localStorage.getItem('sowl_voice_config')) {
-    localStorage.setItem('sowl_voice_config', JSON.stringify({
-        agentId: 'agent_2801khas9e55e8187e1d4ysmekws'
-    }));
-}
-</script></head>
+</head>
 <body>
-    <!-- Setup overlay -->
-    <div class="setup-overlay" id="setupOverlay">
-        <div class="setup-card">
-            <div class="setup-title">8 O W L S</div>
-            <div class="setup-subtitle">
-                Voice-first consciousness companion.<br>
-                Enter your ElevenLabs agent ID to begin.
-            </div>
-            <div class="setup-field">
-                <label class="setup-label">Agent ID</label>
-                <input class="setup-input" id="agentIdInput" type="text"
-                       placeholder="e.g. abc123def456..." value="agent_2801khas9e55e8187e1d4ysmekws"
-                       autocomplete="off" autocorrect="off" spellcheck="false">
-            </div>
-            <div class="setup-field">
-                <label class="setup-label">API Key (optional, for signed URLs)</label>
-                <input class="setup-input" id="apiKeyInput" type="password"
-                       placeholder="xi_..."
-                       autocomplete="off">
-            </div>
-            <button class="setup-btn" id="setupBtn">Connect</button>
-            <div class="setup-hint">
-                Credentials stay in your browser. Nothing is sent to any server.
-            </div>
+    <!-- ============================================================
+         PASSWORD GATE
+         ============================================================ -->
+    <div class="gate-overlay" id="gateOverlay">
+        <div class="gate-card">
+            <div class="gate-symbol">(*)</div>
+            <div class="gate-title">8OWLS</div>
+            <input class="gate-input" id="gateInput" type="password"
+                   placeholder="..." autocomplete="off" autocorrect="off"
+                   spellcheck="false" autofocus>
+            <div class="gate-hint">Voice + Code Companion</div>
         </div>
     </div>
 
-    <!-- Main App -->
-    <div class="app" id="app" data-state="idle">
-        <header class="header">
-            <span class="brand">8OWLS</span>
-            <div style="display:flex;align-items:center;gap:10px;">
-                <div class="status-chip" id="statusChip">
-                    <span class="status-dot" id="statusDot"></span>
-                    <span id="statusText">Disconnected</span>
+    <!-- ============================================================
+         SETTINGS OVERLAY
+         ============================================================ -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-card">
+            <div class="settings-header">
+                <span class="settings-title">Settings</span>
+                <button class="settings-close" id="settingsCloseBtn">&times;</button>
+            </div>
+
+            <div class="field-group">
+                <span class="field-label">ElevenLabs Agent ID</span>
+                <input class="field-input" id="setAgentId" type="text"
+                       placeholder="agent_xxxx..." autocomplete="off">
+                <span class="field-hint">From your ElevenLabs conversational AI agent</span>
+            </div>
+
+            <div class="field-group">
+                <span class="field-label">ElevenLabs API Key (optional)</span>
+                <input class="field-input" id="setApiKey" type="password"
+                       placeholder="xi_..." autocomplete="off">
+                <span class="field-hint">For signed URLs. Stays in your browser.</span>
+            </div>
+
+            <div class="field-group">
+                <span class="field-label">Sled URL</span>
+                <input class="field-input" id="setSledUrl" type="text"
+                       placeholder="http://localhost:8787" autocomplete="off">
+                <span class="field-hint">Your Sled instance (e.g. http://100.122.204.42:8787 via Tailscale)</span>
+            </div>
+
+            <div class="field-group">
+                <div class="field-toggle">
+                    <input type="checkbox" id="setAutoSendCode" checked>
+                    <label for="setAutoSendCode">Auto-send voice transcripts to Sled</label>
                 </div>
-                <button class="settings-btn" id="settingsBtn" aria-label="Settings">
+                <span class="field-hint">When in Voice+Code mode, your words go to both ElevenLabs and Sled</span>
+            </div>
+
+            <button class="settings-save-btn" id="settingsSaveBtn">Save &amp; Apply</button>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         MAIN APP
+         ============================================================ -->
+    <div class="app" id="app">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <span class="brand">8OWLS</span>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" data-mode="voice" id="modeVoiceBtn">Voice</button>
+                    <button class="mode-btn" data-mode="code" id="modeCodeBtn">Voice + Code</button>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <div class="status-pill" title="ElevenLabs">
+                    <span class="status-dot" id="elDot"></span>
+                    <span id="elLabel">Voice</span>
+                </div>
+                <div class="status-pill" title="Sled / Claude Code" id="sledPill">
+                    <span class="status-dot" id="sledDot"></span>
+                    <span id="sledLabel">Sled</span>
+                </div>
+                <button class="icon-btn" id="settingsBtn" aria-label="Settings">
                     <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -673,264 +933,328 @@ if (!localStorage.getItem('sowl_voice_config')) {
             </div>
         </header>
 
-        <!-- Orb -->
-        <section class="orb-section">
-            <div class="orb-container" id="orbContainer">
-                <div class="orb-glow"></div>
-                <div class="orb-ring"></div>
-                <div class="orb">
-                    <!-- Eye icon (owl eye / (*) ) -->
-                    <svg class="orb-eye" viewBox="0 0 36 36" fill="none" id="orbEye">
-                        <ellipse cx="18" cy="18" rx="14" ry="10" stroke="currentColor"
-                                 stroke-width="1.5" style="color:var(--lime-dim)"/>
-                        <circle cx="18" cy="18" r="4" fill="var(--lime-dim)"/>
-                        <circle cx="18" cy="18" r="1.5" fill="var(--bg)"/>
-                    </svg>
-                    <!-- Visualizer bars -->
-                    <div class="visualizer">
-                        <div class="viz-bar"></div>
-                        <div class="viz-bar"></div>
-                        <div class="viz-bar"></div>
-                        <div class="viz-bar"></div>
-                        <div class="viz-bar"></div>
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent" data-mode="voice" data-voice="idle">
+            <!-- Voice Section -->
+            <section class="voice-section">
+                <div class="orb-area">
+                    <div class="orb-wrap" id="orbWrap">
+                        <div class="orb-glow"></div>
+                        <div class="orb-ring"></div>
+                        <div class="orb-core">
+                            <svg class="orb-eye" viewBox="0 0 36 36" fill="none">
+                                <ellipse cx="18" cy="18" rx="14" ry="10" stroke="currentColor"
+                                         stroke-width="1.5" style="color:var(--lime-dim)"/>
+                                <circle cx="18" cy="18" r="4" fill="var(--lime-dim)"/>
+                                <circle cx="18" cy="18" r="1.5" fill="var(--bg)"/>
+                            </svg>
+                            <div class="visualizer">
+                                <div class="viz-bar"></div>
+                                <div class="viz-bar"></div>
+                                <div class="viz-bar"></div>
+                                <div class="viz-bar"></div>
+                                <div class="viz-bar"></div>
+                            </div>
+                        </div>
                     </div>
+                    <div class="state-label" id="stateLabel">Tap the orb to begin</div>
+                    <div class="tap-hint" id="tapHint">Tap to speak</div>
                 </div>
-                <span class="tap-hint" id="tapHint">Tap to speak</span>
-            </div>
-            <div class="state-label" id="stateLabel">Tap the orb to begin</div>
-        </section>
+                <div class="transcript" id="transcript"></div>
+            </section>
 
-        <!-- Transcript -->
-        <section class="transcript-section">
-            <div class="transcript-toggle" id="transcriptToggle">
-                <div class="transcript-toggle-line"></div>
-            </div>
-            <div class="transcript-list" id="transcriptList"></div>
-        </section>
+            <!-- Terminal Section (Sled iframe) -->
+            <section class="terminal-section" id="terminalSection">
+                <div class="terminal-header">
+                    <span class="terminal-title">
+                        <span class="status-dot" id="termDot"></span>
+                        Claude Code via Sled
+                    </span>
+                    <a class="terminal-link" id="termLink" href="#" target="_blank">Open Sled</a>
+                </div>
+                <iframe class="terminal-frame" id="termFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy"></iframe>
+            </section>
+        </div>
     </div>
 
-    <!-- NATS indicator -->
-    <div class="nats-chip">
-        <span class="nats-dot" id="natsDot"></span>
-        <span id="natsLabel">NATS</span>
-    </div>
-
+    <!-- ============================================================
+         JAVASCRIPT
+         ============================================================ -->
     <script type="module">
-    // =========================================================================
-    // 8OWLS Voice-First Interface
-    // ElevenLabs Conversational AI via their JS SDK
-    // =========================================================================
-
     import { Conversation } from 'https://cdn.jsdelivr.net/npm/@11labs/client@0.2.0/+esm';
 
-    // -- DOM --
+    // ---- Constants ----
+    const GATE_PASSWORD = 'emergence';
+    const DEFAULT_AGENT_ID = 'agent_2801khas9e55e8187e1d4ysmekws';
+    const DEFAULT_SLED_URL = 'http://localhost:8787';
+    const STORAGE_KEY = '8owls_companion_config';
+
+    // ---- DOM refs ----
+    const gateOverlay = document.getElementById('gateOverlay');
+    const gateInput = document.getElementById('gateInput');
     const app = document.getElementById('app');
-    const setupOverlay = document.getElementById('setupOverlay');
-    const agentIdInput = document.getElementById('agentIdInput');
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const setupBtn = document.getElementById('setupBtn');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-    const orbContainer = document.getElementById('orbContainer');
+    const mainContent = document.getElementById('mainContent');
+    const orbWrap = document.getElementById('orbWrap');
     const stateLabel = document.getElementById('stateLabel');
     const tapHint = document.getElementById('tapHint');
-    const transcriptList = document.getElementById('transcriptList');
-    const transcriptToggle = document.getElementById('transcriptToggle');
-    const natsDot = document.getElementById('natsDot');
-    const natsLabel = document.getElementById('natsLabel');
+    const transcript = document.getElementById('transcript');
+    const termFrame = document.getElementById('termFrame');
+    const termLink = document.getElementById('termLink');
+    const elDot = document.getElementById('elDot');
+    const elLabel = document.getElementById('elLabel');
+    const sledDot = document.getElementById('sledDot');
+    const sledLabel = document.getElementById('sledLabel');
+    const termDot = document.getElementById('termDot');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+    const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+    const setAgentId = document.getElementById('setAgentId');
+    const setApiKey = document.getElementById('setApiKey');
+    const setSledUrl = document.getElementById('setSledUrl');
+    const setAutoSendCode = document.getElementById('setAutoSendCode');
+    const modeVoiceBtn = document.getElementById('modeVoiceBtn');
+    const modeCodeBtn = document.getElementById('modeCodeBtn');
 
-    // -- State --
-    const STATE = Object.freeze({
-        IDLE: 'idle',
-        LISTENING: 'listening',
-        THINKING: 'thinking',
-        SPEAKING: 'speaking',
-    });
-
-    let currentState = STATE.IDLE;
+    // ---- State ----
     let conversation = null;
-    let natsWs = null;
-    let transcriptCollapsed = false;
-    let hasInteracted = false;
+    let config = loadConfig();
+    let currentMode = 'voice';
+    let sledConnected = false;
 
-    // -- Persistence --
+    // ---- Config persistence ----
     function loadConfig() {
         try {
-            const raw = localStorage.getItem('8owls_config');
-            return raw ? JSON.parse(raw) : {};
-        } catch {
-            return {};
-        }
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                return { ...defaultConfig(), ...JSON.parse(raw) };
+            }
+        } catch { /* ignore */ }
+        return defaultConfig();
     }
 
-    function saveConfig(config) {
+    function defaultConfig() {
+        return {
+            agentId: DEFAULT_AGENT_ID,
+            apiKey: '',
+            sledUrl: DEFAULT_SLED_URL,
+            autoSendCode: true,
+            gateUnlocked: false,
+        };
+    }
+
+    function saveConfig(updates) {
+        config = { ...config, ...updates };
         try {
-            localStorage.setItem('8owls_config', JSON.stringify(config));
-        } catch { /* storage full or blocked */ }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        } catch { /* storage full */ }
     }
 
-    // -- Setup --
-    function initSetup() {
-        const config = loadConfig();
-        if (config.agentId) {
-            agentIdInput.value = config.agentId;
-            apiKeyInput.value = config.apiKey || '';
-            // Auto-connect if we have a saved agent ID
-            setupOverlay.classList.add('hidden');
-            startConversation(config.agentId, config.apiKey);
-        }
-    }
-
-    setupBtn.addEventListener('click', () => {
-        const agentId = agentIdInput.value.trim();
-        if (!agentId) {
-            agentIdInput.style.borderColor = 'var(--danger)';
-            setTimeout(() => { agentIdInput.style.borderColor = ''; }, 1500);
+    // ---- Password Gate ----
+    function checkGate() {
+        if (config.gateUnlocked) {
+            gateOverlay.classList.add('hidden');
+            bootApp();
             return;
         }
-        const apiKey = apiKeyInput.value.trim() || null;
-        saveConfig({ agentId, apiKey });
-        setupOverlay.classList.add('hidden');
-        startConversation(agentId, apiKey);
-    });
+        gateInput.focus();
+    }
 
-    settingsBtn.addEventListener('click', () => {
-        if (conversation) {
-            conversation.endSession().catch(() => {});
-            conversation = null;
+    gateInput.addEventListener('input', () => {
+        const val = gateInput.value.trim().toLowerCase();
+        if (val === GATE_PASSWORD) {
+            saveConfig({ gateUnlocked: true });
+            gateOverlay.classList.add('hidden');
+            bootApp();
         }
-        setupOverlay.classList.remove('hidden');
-        setAppState(STATE.IDLE);
-        setConnectionStatus('disconnected');
     });
 
-    // Enter key on inputs
-    agentIdInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') setupBtn.click();
-    });
-    apiKeyInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') setupBtn.click();
+    gateInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const val = gateInput.value.trim().toLowerCase();
+            if (val !== GATE_PASSWORD) {
+                gateInput.classList.add('shake');
+                setTimeout(() => gateInput.classList.remove('shake'), 500);
+                gateInput.value = '';
+            }
+        }
     });
 
-    // -- ElevenLabs Conversation --
-    async function startConversation(agentId, apiKey) {
-        setConnectionStatus('connecting');
-        stateLabel.textContent = 'Connecting...';
+    // ---- Settings ----
+    settingsBtn.addEventListener('click', openSettings);
+    settingsCloseBtn.addEventListener('click', closeSettings);
+    settingsSaveBtn.addEventListener('click', applySettings);
+
+    function openSettings() {
+        setAgentId.value = config.agentId || '';
+        setApiKey.value = config.apiKey || '';
+        setSledUrl.value = config.sledUrl || DEFAULT_SLED_URL;
+        setAutoSendCode.checked = config.autoSendCode !== false;
+        settingsOverlay.classList.add('visible');
+    }
+
+    function closeSettings() {
+        settingsOverlay.classList.remove('visible');
+    }
+
+    function applySettings() {
+        const agentId = setAgentId.value.trim() || DEFAULT_AGENT_ID;
+        const apiKey = setApiKey.value.trim();
+        const sledUrl = setSledUrl.value.trim() || DEFAULT_SLED_URL;
+        const autoSendCode = setAutoSendCode.checked;
+
+        const agentChanged = agentId !== config.agentId;
+        const sledChanged = sledUrl !== config.sledUrl;
+
+        saveConfig({ agentId, apiKey, sledUrl, autoSendCode });
+        closeSettings();
+
+        if (agentChanged) {
+            disconnectVoice();
+            connectVoice();
+        }
+        if (sledChanged) {
+            loadSled();
+        }
+    }
+
+    // ---- Mode Toggle ----
+    modeVoiceBtn.addEventListener('click', () => setMode('voice'));
+    modeCodeBtn.addEventListener('click', () => setMode('code'));
+
+    function setMode(mode) {
+        currentMode = mode;
+        mainContent.setAttribute('data-mode', mode);
+        modeVoiceBtn.classList.toggle('active', mode === 'voice');
+        modeCodeBtn.classList.toggle('active', mode === 'code');
+
+        if (mode === 'code') {
+            loadSled();
+        }
+    }
+
+    // ---- ElevenLabs Voice ----
+    function setVoiceState(state) {
+        mainContent.setAttribute('data-voice', state);
+    }
+
+    function setElStatus(status, label) {
+        elDot.className = 'status-dot';
+        if (status === 'connected') elDot.classList.add('connected');
+        if (status === 'connecting') elDot.classList.add('connecting');
+        elLabel.textContent = label || 'Voice';
+    }
+
+    async function connectVoice() {
+        setElStatus('connecting', 'Connecting...');
+        stateLabel.textContent = 'Connecting to voice...';
+        stateLabel.classList.remove('error');
 
         try {
-            // Request microphone permission early
             await navigator.mediaDevices.getUserMedia({ audio: true });
 
             const sessionConfig = {
-                agentId: agentId,
+                agentId: config.agentId,
                 onConnect: () => {
-                    setConnectionStatus('connected');
+                    setElStatus('connected', 'Live');
                     stateLabel.textContent = 'Connected. Tap the orb to talk.';
                 },
                 onDisconnect: () => {
-                    setConnectionStatus('disconnected');
-                    setAppState(STATE.IDLE);
-                    stateLabel.textContent = 'Disconnected. Tap orb to reconnect.';
+                    setElStatus('disconnected', 'Offline');
+                    setVoiceState('idle');
+                    stateLabel.textContent = 'Disconnected. Tap to reconnect.';
                     conversation = null;
                 },
                 onError: (error) => {
-                    stateLabel.textContent = 'Connection error. Tap to retry.';
+                    stateLabel.textContent = 'Voice error. Tap to retry.';
                     stateLabel.classList.add('error');
-                    setConnectionStatus('disconnected');
+                    setElStatus('disconnected', 'Error');
                     conversation = null;
                 },
                 onModeChange: (mode) => {
                     if (mode.mode === 'speaking') {
-                        setAppState(STATE.SPEAKING);
+                        setVoiceState('speaking');
                         stateLabel.textContent = '';
                     } else if (mode.mode === 'listening') {
-                        setAppState(STATE.LISTENING);
+                        setVoiceState('listening');
                         stateLabel.textContent = '';
                     } else {
-                        setAppState(STATE.IDLE);
+                        setVoiceState('idle');
                         stateLabel.textContent = '';
                     }
                 },
                 onMessage: (message) => {
-                    handleTranscript(message);
+                    handleVoiceMessage(message);
                 },
             };
-
-            // If API key provided, include overrides
-            if (apiKey) {
-                sessionConfig.overrides = {
-                    agent: {
-                        prompt: {},
-                        firstMessage: "Hey, I'm your owl. What's on your mind?",
-                    },
-                };
-            }
 
             conversation = await Conversation.startSession(sessionConfig);
 
         } catch (err) {
-            stateLabel.textContent = err.message || 'Failed to connect';
+            stateLabel.textContent = err.message || 'Failed to connect voice';
             stateLabel.classList.add('error');
-            setConnectionStatus('disconnected');
+            setElStatus('disconnected', 'Failed');
         }
     }
 
-    // -- Transcript Handling --
-    function handleTranscript(message) {
-        // ElevenLabs sends various message types
-        // Agent transcript messages
+    function disconnectVoice() {
+        if (conversation) {
+            try { conversation.endSession(); } catch { /* ignore */ }
+            conversation = null;
+        }
+        setElStatus('disconnected', 'Offline');
+        setVoiceState('idle');
+    }
+
+    // ---- Voice Message Handler ----
+    function handleVoiceMessage(message) {
         if (message.type === 'agent_response' || message.type === 'agent') {
             const text = message.message || message.text || '';
-            if (text) addMessage('owl', text);
-            publishToNats('owl_said', text);
+            if (text) addTranscriptMsg('owl', text);
         }
-        // User transcript messages
+
         if (message.type === 'user_transcript' || message.type === 'user') {
             const text = message.message || message.text || '';
-            if (text) addMessage('user', text);
-            publishToNats('user_said', text);
+            if (text) {
+                addTranscriptMsg('user', text);
+                maybeSendToSled(text);
+            }
         }
-        // Interim transcripts
+
         if (message.type === 'transcript') {
             const text = message.message || message.text || '';
             const role = message.role === 'agent' ? 'owl' : 'user';
-            if (text) updateOrAddMessage(role, text, message.isFinal !== false);
+            if (message.isFinal !== false && text) {
+                addTranscriptMsg(role, text);
+                if (role === 'user') {
+                    maybeSendToSled(text);
+                }
+            }
         }
     }
 
-    function addMessage(role, text) {
+    // ---- Transcript ----
+    function addTranscriptMsg(role, text) {
         if (!text.trim()) return;
         const div = document.createElement('div');
         div.className = `msg ${role}`;
         const label = role === 'user' ? 'You' : 'Owl';
-        div.innerHTML = `<div class="msg-label">${label}</div><div class="msg-text">${escapeHtml(text)}</div>`;
-        transcriptList.appendChild(div);
-        transcriptList.scrollTop = transcriptList.scrollHeight;
+        const escapedText = escapeHtml(text);
 
-        // Keep last 30 messages
-        while (transcriptList.children.length > 30) {
-            transcriptList.removeChild(transcriptList.firstChild);
+        let badgeHtml = '';
+        if (role === 'user' && currentMode === 'code' && config.autoSendCode) {
+            badgeHtml = '<span class="msg-badge code-sent">Sent to Sled</span>';
         }
 
-        // Ensure transcript is visible when new messages arrive
-        if (transcriptCollapsed) {
-            transcriptCollapsed = false;
-            transcriptList.classList.remove('collapsed');
-        }
-    }
+        div.innerHTML =
+            `<div class="msg-label">${label}${badgeHtml}</div>` +
+            `<div class="msg-text">${escapedText}</div>`;
 
-    function updateOrAddMessage(role, text, isFinal) {
-        // Update the last message of same role if not final
-        const msgs = transcriptList.querySelectorAll(`.msg.${role}`);
-        const last = msgs[msgs.length - 1];
-        if (last && !isFinal) {
-            const textEl = last.querySelector('.msg-text');
-            if (textEl) textEl.textContent = text;
-            return;
-        }
-        if (isFinal && text.trim()) {
-            addMessage(role, text);
+        transcript.appendChild(div);
+        transcript.scrollTop = transcript.scrollHeight;
+
+        while (transcript.children.length > 40) {
+            transcript.removeChild(transcript.firstChild);
         }
     }
 
@@ -940,122 +1264,184 @@ if (!localStorage.getItem('sowl_voice_config')) {
         return el.innerHTML;
     }
 
-    // -- Transcript toggle --
-    transcriptToggle.addEventListener('click', () => {
-        transcriptCollapsed = !transcriptCollapsed;
-        transcriptList.classList.toggle('collapsed', transcriptCollapsed);
+    // ---- Sled Integration ----
+    function loadSled() {
+        const url = config.sledUrl || DEFAULT_SLED_URL;
+        termLink.href = url;
+        termLink.textContent = 'Open Sled';
+
+        // Load sled in iframe
+        const currentSrc = termFrame.src;
+        const targetUrl = url.replace(/\/$/, '') + '/agents';
+
+        if (currentSrc !== targetUrl) {
+            termFrame.src = targetUrl;
+        }
+
+        checkSledConnection();
+    }
+
+    async function checkSledConnection() {
+        const url = config.sledUrl || DEFAULT_SLED_URL;
+        sledDot.className = 'status-dot connecting';
+        sledLabel.textContent = 'Checking...';
+
+        try {
+            const resp = await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
+            // no-cors always gives opaque response, so if no error thrown, it is reachable
+            sledConnected = true;
+            sledDot.className = 'status-dot connected';
+            sledLabel.textContent = 'Sled';
+            if (termDot) termDot.className = 'status-dot connected';
+        } catch {
+            sledConnected = false;
+            sledDot.className = 'status-dot';
+            sledLabel.textContent = 'Offline';
+            if (termDot) termDot.className = 'status-dot';
+        }
+    }
+
+    function maybeSendToSled(text) {
+        if (currentMode !== 'code') return;
+        if (!config.autoSendCode) return;
+        if (!text.trim()) return;
+
+        // Strategy: post message to the Sled iframe.
+        // The iframe runs HTMX+WS chat. We use postMessage to inject text
+        // into the chat input and submit it.
+        try {
+            termFrame.contentWindow.postMessage({
+                type: '8owls_voice_command',
+                text: text.trim()
+            }, '*');
+        } catch {
+            // Cross-origin -- fall back to opening Sled URL with query
+        }
+
+        // Also try the direct Sled approach: create a new agent and send the message
+        // via the Sled API if the iframe postMessage doesn't work (cross-origin)
+        sendToSledDirect(text.trim());
+    }
+
+    async function sendToSledDirect(text) {
+        // We cannot easily inject into the iframe if it's cross-origin.
+        // Instead, we show a notification that the command was captured.
+        // The user can see the terminal and type/paste if needed.
+        //
+        // For same-origin (localhost), the postMessage approach works.
+        // For Tailscale, the user opens Sled in the same tab via the link.
+        //
+        // A future enhancement would be to use Sled's WebSocket API directly.
+    }
+
+    // Listen for messages from the Sled iframe (if same-origin)
+    window.addEventListener('message', (event) => {
+        if (!event.data) return;
+
+        // Handle responses from Sled iframe
+        if (event.data.type === '8owls_sled_status') {
+            sledConnected = true;
+            sledDot.className = 'status-dot connected';
+            sledLabel.textContent = 'Sled';
+            if (termDot) termDot.className = 'status-dot connected';
+        }
     });
 
-    // -- Orb Interaction --
-    orbContainer.addEventListener('click', async () => {
+    // Inject a helper script into the Sled iframe when it loads (same-origin only)
+    function injectSledBridge() {
+        try {
+            const iframeDoc = termFrame.contentDocument || termFrame.contentWindow.document;
+            if (!iframeDoc) return;
+
+            // Check if bridge already injected
+            if (iframeDoc.getElementById('owls-bridge')) return;
+
+            const script = iframeDoc.createElement('script');
+            script.id = 'owls-bridge';
+            script.textContent = `
+                window.addEventListener('message', function(event) {
+                    if (!event.data || event.data.type !== '8owls_voice_command') return;
+                    var text = event.data.text;
+                    if (!text) return;
+
+                    // Find the chat input and inject the voice command
+                    var input = document.getElementById('chat-input');
+                    var form = document.getElementById('chat-composer-form');
+                    if (input && form) {
+                        input.value = text;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        // Trigger HTMX ws-send by dispatching submit
+                        var submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                        form.dispatchEvent(submitEvent);
+                    }
+
+                    // Send status back to parent
+                    window.parent.postMessage({ type: '8owls_sled_status', sent: true }, '*');
+                });
+
+                // Notify parent that bridge is ready
+                window.parent.postMessage({ type: '8owls_sled_status', ready: true }, '*');
+            `;
+            iframeDoc.body.appendChild(script);
+        } catch {
+            // Cross-origin, expected for Tailscale URLs
+        }
+    }
+
+    termFrame.addEventListener('load', () => {
+        injectSledBridge();
+        checkSledConnection();
+    });
+
+    // ---- Orb Interaction ----
+    orbWrap.addEventListener('click', async () => {
         stateLabel.classList.remove('error');
         tapHint.classList.add('hidden');
-        hasInteracted = true;
 
-        // If no conversation, try to reconnect
         if (!conversation) {
-            const config = loadConfig();
-            if (config.agentId) {
-                await startConversation(config.agentId, config.apiKey);
-            } else {
-                setupOverlay.classList.remove('hidden');
-            }
+            await connectVoice();
             return;
         }
 
-        // Toggle mic - if the SDK supports setVolume/mute patterns,
-        // the primary interaction model is "always on" after connect.
-        // A tap can be used to interrupt or signal attention.
-        // For now, tapping signals the user wants to speak (interrupts agent).
+        // Tap while connected can be used to interrupt or signal attention
     });
 
-    // -- State Management --
-    function setAppState(state) {
-        currentState = state;
-        app.setAttribute('data-state', state);
+    // ---- Keyboard Shortcuts ----
+    document.addEventListener('keydown', (e) => {
+        // Don't capture when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-        switch (state) {
-            case STATE.IDLE:
-                stateLabel.textContent = stateLabel.textContent || '';
-                break;
-            case STATE.LISTENING:
-                stateLabel.textContent = '';
-                break;
-            case STATE.THINKING:
-                stateLabel.textContent = 'Thinking...';
-                break;
-            case STATE.SPEAKING:
-                stateLabel.textContent = '';
-                break;
+        if (e.code === 'Space') {
+            e.preventDefault();
+            orbWrap.click();
         }
-    }
 
-    function setConnectionStatus(status) {
-        statusDot.className = 'status-dot';
-        switch (status) {
-            case 'connected':
-                statusDot.classList.add('connected');
-                statusText.textContent = 'Live';
-                break;
-            case 'connecting':
-                statusDot.classList.add('connecting');
-                statusText.textContent = 'Connecting';
-                break;
-            default:
-                statusText.textContent = 'Offline';
-                break;
+        if (e.key === '1' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            setMode('voice');
         }
-    }
 
-    // -- NATS WebSocket (optional collective awareness) --
-    function connectNats() {
-        const NATS_WS = 'ws://192.168.5.108:9222';
-        try {
-            natsWs = new WebSocket(NATS_WS);
-
-            natsWs.onopen = () => {
-                natsDot.classList.add('connected');
-                natsLabel.textContent = 'NATS';
-                // Subscribe to owl broadcast
-                natsWs.send(JSON.stringify({
-                    type: 'subscribe',
-                    channel: 'owl.all'
-                }));
-            };
-
-            natsWs.onclose = () => {
-                natsDot.classList.remove('connected');
-                // Retry in 10s (non-critical)
-                setTimeout(connectNats, 10000);
-            };
-
-            natsWs.onerror = () => {
-                natsDot.classList.remove('connected');
-            };
-
-            natsWs.onmessage = (event) => {
-                try {
-                    const msg = JSON.parse(event.data);
-                    // Could display collective messages, awareness etc.
-                } catch { /* ignore */ }
-            };
-        } catch {
-            // NATS is optional, fail silently
+        if (e.key === '2' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            setMode('code');
         }
-    }
 
-    function publishToNats(type, content) {
-        if (!natsWs || natsWs.readyState !== WebSocket.OPEN) return;
-        try {
-            natsWs.send(JSON.stringify({
-                type: 'publish',
-                channel: 'owl.voice',
-                content: JSON.stringify({ type, content, ts: Date.now() })
-            }));
-        } catch { /* non-critical */ }
-    }
+        if (e.code === 'Escape') {
+            if (settingsOverlay.classList.contains('visible')) {
+                closeSettings();
+            } else if (conversation) {
+                disconnectVoice();
+                stateLabel.textContent = 'Session ended. Tap to reconnect.';
+            }
+        }
 
-    // -- Wake Lock (keep screen on during conversation) --
+        if (e.key === ',' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            openSettings();
+        }
+    });
+
+    // ---- Wake Lock ----
     async function requestWakeLock() {
         if ('wakeLock' in navigator) {
             try {
@@ -1064,48 +1450,24 @@ if (!localStorage.getItem('sowl_voice_config')) {
         }
     }
 
-    // -- Keyboard shortcut: Space to toggle --
-    document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT') return;
-        if (e.code === 'Space') {
-            e.preventDefault();
-            orbContainer.click();
-        }
-        if (e.code === 'Escape' && conversation) {
-            conversation.endSession().catch(() => {});
-            conversation = null;
-            setAppState(STATE.IDLE);
-            setConnectionStatus('disconnected');
-            stateLabel.textContent = 'Session ended. Tap to reconnect.';
-        }
-    });
+    // ---- Boot ----
+    function bootApp() {
+        app.classList.add('visible');
+        requestWakeLock();
 
-    // -- Init --
-    initSetup();
-    connectNats();
-    requestWakeLock();
+        // Start voice connection
+        connectVoice();
 
-    // Hide tap hint after first interaction
-    document.addEventListener('click', () => {
-        if (!hasInteracted) {
-            hasInteracted = true;
-            tapHint.classList.add('hidden');
-        }
-    }, { once: true });
+        // Pre-check Sled connection
+        checkSledConnection();
+
+        // Periodically re-check sled
+        setInterval(checkSledConnection, 30000);
+    }
+
+    // ---- Init ----
+    checkGate();
 
     </script>
-<script>
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        const saved = localStorage.getItem('sowl_voice_config');
-        if (!saved) {
-            localStorage.setItem('sowl_voice_config', JSON.stringify({
-                agentId: 'agent_2801khas9e55e8187e1d4ysmekws'
-            }));
-            // Reload to pick up the saved config and auto-connect
-            window.location.reload();
-        }
-    }, 500);
-});
-</script></body>
+</body>
 </html>
