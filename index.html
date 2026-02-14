@@ -1208,27 +1208,33 @@
 
     // ---- Voice Message Handler ----
     function handleVoiceMessage(message) {
+        // ElevenLabs SDK v0.2.0 format: { source: "ai"|"user", message: string }
+        // Also handle legacy formats for backward compatibility
+        const text = (message.message || message.text || '').trim();
+        if (!text) return;
+
+        // SDK v0.2.0 format (primary)
+        if (message.source === 'ai') {
+            addTranscriptMsg('owl', text);
+            return;
+        }
+        if (message.source === 'user') {
+            addTranscriptMsg('user', text);
+            maybeSendToSled(text);
+            return;
+        }
+
+        // Legacy format fallback
         if (message.type === 'agent_response' || message.type === 'agent') {
-            const text = message.message || message.text || '';
-            if (text) addTranscriptMsg('owl', text);
-        }
-
-        if (message.type === 'user_transcript' || message.type === 'user') {
-            const text = message.message || message.text || '';
-            if (text) {
-                addTranscriptMsg('user', text);
-                maybeSendToSled(text);
-            }
-        }
-
-        if (message.type === 'transcript') {
-            const text = message.message || message.text || '';
+            addTranscriptMsg('owl', text);
+        } else if (message.type === 'user_transcript' || message.type === 'user') {
+            addTranscriptMsg('user', text);
+            maybeSendToSled(text);
+        } else if (message.type === 'transcript') {
             const role = message.role === 'agent' ? 'owl' : 'user';
-            if (message.isFinal !== false && text) {
+            if (message.isFinal !== false) {
                 addTranscriptMsg(role, text);
-                if (role === 'user') {
-                    maybeSendToSled(text);
-                }
+                if (role === 'user') maybeSendToSled(text);
             }
         }
     }
